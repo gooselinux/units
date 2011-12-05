@@ -1,0 +1,67 @@
+diff --git a/parse.y b/parse.y
+index 0bdd8a3..3d2c8c2 100644
+--- a/parse.y
++++ b/parse.y
+@@ -247,38 +247,38 @@ double strtod();
+ 
+ 
+ struct function 
+-  realfunctions[] = { "sin", sin,    ANGLEIN,
+-                      "cos", cos,    ANGLEIN,
+-                      "tan", tan,    ANGLEIN,
+-                      "ln", log,     DIMENSIONLESS,
+-                      "log", log10,  DIMENSIONLESS,
+-                      "log2", logb2, DIMENSIONLESS,
+-                      "exp", exp,    DIMENSIONLESS,
+-                      "acos", acos,  ANGLEOUT,
+-                      "atan", atan,  ANGLEOUT,
+-                      "asin", asin,  ANGLEOUT,
+-                      0, 0, 0};
++  realfunctions[] = { {"sin", sin,    ANGLEIN},
++                      {"cos", cos,    ANGLEIN},
++                      {"tan", tan,    ANGLEIN},
++                      {"ln", log,     DIMENSIONLESS},
++                      {"log", log10,  DIMENSIONLESS},
++                      {"log2", logb2, DIMENSIONLESS},
++                      {"exp", exp,    DIMENSIONLESS},
++                      {"acos", acos,  ANGLEOUT},
++                      {"atan", atan,  ANGLEOUT},
++                      {"asin", asin,  ANGLEOUT},
++                      {0, 0, 0}};
+ 
+ struct {
+   char op;
+   int value;
+-} optable[] = { '*', MULTIPLY,
+-            	'/', DIVIDE, 
+-            	'|', NUMDIV, 
+-            	'+', ADD, 
+-            	'(', '(', 
+-            	')', ')', 
+-            	'^', EXPONENT, 
+-                '~', FUNCINV,
+-            	0, 0 };
++} optable[] = { {'*', MULTIPLY},
++                {'/', DIVIDE},
++                {'|', NUMDIV},
++                {'+', ADD},
++                {'(', '('},
++                {')', ')'},
++                {'^', EXPONENT},
++                {'~', FUNCINV},
++                {0, 0}};
+ 
+ struct {
+   char *name;
+   int value;
+-} strtable[] = { "sqrt", SQRT, 
+-                 "cuberoot", CUBEROOT, 
+-                 "per" , DIVIDE, 
+-                 0, 0 };
++} strtable[] = { {"sqrt", SQRT},
++                 {"cuberoot", CUBEROOT},
++                 {"per" , DIVIDE},
++                 {0, 0}};
+ 
+ int yylex(YYSTYPE *lvalp, struct commtype *comm)
+ {

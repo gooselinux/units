@@ -1,0 +1,234 @@
+diff --git a/parse.y b/parse.y
+index 89a05b1..0bdd8a3 100644
+--- a/parse.y
++++ b/parse.y
+@@ -29,6 +29,8 @@
+ 
+ #include "units.h"
+ 
++int yylex();
++void yyerror(char *);
+ 
+ static int err;  /* value used by parser to store return values */
+ 
+@@ -114,7 +116,7 @@ funcunit(struct unittype *theunit, struct function *fun)
+     if (err)
+       return err;
+   } else if (fun->type==ANGLEOUT || fun->type == DIMENSIONLESS) {
+-    if (err=unit2num(theunit))
++    if ((err=unit2num(theunit)))
+       return err;
+     
+   } else 
+@@ -278,7 +280,7 @@ struct {
+                  "per" , DIVIDE, 
+                  0, 0 };
+ 
+-yylex(YYSTYPE *lvalp, struct commtype *comm)
++int yylex(YYSTYPE *lvalp, struct commtype *comm)
+ {
+   int length, count;
+   struct unittype *output;
+@@ -414,7 +416,7 @@ yylex(YYSTYPE *lvalp, struct commtype *comm)
+ }
+ 
+ 
+-yyerror(char *s){}
++void yyerror(char *s){}
+ 
+ void
+ freelist(int startunit)
+diff --git a/units.c b/units.c
+index f5416b0..2cd6765 100644
+--- a/units.c
++++ b/units.c
+@@ -29,6 +29,7 @@
+ 
+ #ifdef READLINE
+ #  include <readline/readline.h>
++#  include <readline/history.h>
+ #  define RVERSTR "with readline"
+ #else
+ #  define RVERSTR "without readline"
+@@ -489,7 +490,7 @@ readunits(char *file, FILE *errfile,
+       }	
+       if (wronglocale)
+ 	continue;
+-      if (lineptr = strchr(line,COMMENTCHAR))
++      if ((lineptr = strchr(line,COMMENTCHAR)))
+          *lineptr = 0;
+       unitname = strtok(line, WHITE);
+       if (!unitname || !*unitname) 
+@@ -519,9 +520,9 @@ readunits(char *file, FILE *errfile,
+   	     goterr=1;
+ 	     continue;
+ 	 }
+-	 if (pfxptr = plookup(unitname)) {  /* already there: redefinition */
++	 if ((pfxptr = plookup(unitname))) {  /* already there: redefinition */
+  	    goterr=1;
+-            if (errfile)
++            if (errfile) {
+ 	      if (!strcmp(pfxptr->name, unitname))
+ 		fprintf(errfile,
+    	        "%s: redefinition of prefix '%s-' on line %d of '%s' ignored.\n",
+@@ -529,6 +530,7 @@ readunits(char *file, FILE *errfile,
+ 	      else
+ 	         fprintf(errfile, "%s: prefix '%s-' on line %d of '%s' is hidden by earlier definition of '%s-'.\n",
+ 		       progname, unitname, linenum, file, pfxptr->name);
++            }
+ 	    continue;
+ 	 } 
+ 
+@@ -948,7 +950,7 @@ lookupunit(char *unit,int prefixok)
+    struct prefixlist *pfxptr;
+    struct unitlist *uptr;
+ 
+-   if (uptr = ulookup(unit))
++   if ((uptr = ulookup(unit)))
+       return uptr->value;
+ 
+    if (strlen(unit)>2 && unit[strlen(unit) - 1] == 's') {
+@@ -1278,7 +1280,7 @@ completereduce(struct unittype *unit)
+ {
+    int err;
+ 
+-   if (err=reduceunit(unit))
++   if ((err=reduceunit(unit)))
+      return err;
+    sortunit(unit);
+    cancelunit(unit);
+@@ -1340,7 +1342,7 @@ unit2num(struct unittype *input)
+   int err;
+ 
+   initializeunit(&one);
+-  if (err=completereduce(input))
++  if ((err=completereduce(input)))
+     return err;
+   if (compareunits(input,&one,ignore_nothing))
+     return E_NOTANUMBER;
+@@ -1404,13 +1406,13 @@ rootunit(struct unittype *inunit,int n)
+    int err; 
+ 
+    initializeunit(&outunit);
+-   if (err=completereduce(inunit))
++   if ((err=completereduce(inunit)))
+      return err;
+-   if ((n & 1==0) && (inunit->factor<0)) return E_NOTROOT;
++   if (((n & 1)==0) && (inunit->factor<0)) return E_NOTROOT;
+    outunit.factor = pow(inunit->factor,1.0/(double)n);
+-   if (err = subunitroot(n, inunit->numerator, outunit.numerator))
++   if ((err = subunitroot(n, inunit->numerator, outunit.numerator)))
+      return err;
+-   if (err = subunitroot(n, inunit->denominator, outunit.denominator))
++   if ((err = subunitroot(n, inunit->denominator, outunit.denominator)))
+      return err;
+    freeunit(inunit);
+    initializeunit(inunit);
+@@ -1482,9 +1484,9 @@ addunit(struct unittype *unita, struct unittype *unitb)
+ {
+   int err;
+ 
+-  if (err=completereduce(unita))
++  if ((err=completereduce(unita)))
+     return err;
+-  if (err=completereduce(unitb))
++  if ((err=completereduce(unitb)))
+     return err;
+   if (compareunits(unita,unitb,ignore_nothing))
+     return E_BADSUM;
+@@ -1723,7 +1725,7 @@ showanswer(char *havestr,struct unittype *have,
+ {
+    struct unittype invhave;
+    int doingrec;  /* reciprocal conversion? */
+-   char *sep, *right, *left;
++   char *sep = NULL, *right = NULL, *left = NULL;
+ 
+    doingrec=0;
+    havestr = removepadding(havestr);
+@@ -1970,7 +1972,8 @@ addtolist(struct unittype *have, char *searchstring, char *rname, char *name, ch
+ 	       int *count, int searchtype)
+ {
+   struct unittype want;
+-  int len,keepit;
++  int len = 0;
++  int keepit = 0;
+ 
+   if (!name) 
+     return;
+@@ -2243,7 +2246,7 @@ completeunits(char *text, int state)
+       curunit = utab[uhash];
+     }
+     if (!curunit && !curprefix){
+-      if (curprefix = plookup(text)){
++      if ((curprefix = plookup(text))){
+         if (strlen(curprefix->name)>1 && strlen(curprefix->name)<strlen(text)){
+           uhash = 0;
+           curunit = utab[uhash];
+@@ -2481,7 +2484,7 @@ processunit(struct unittype *theunit, char *unitstr, char *prompt, int pointer)
+   char *errmsg;
+   int errloc,err;
+ 
+-  if (err=parseunit(theunit, unitstr, &errmsg, &errloc)){
++  if ((err=parseunit(theunit, unitstr, &errmsg, &errloc))){
+     if (pointer){
+       if (err!=E_UNKNOWNUNIT || !irreducible){
+ 	if (!quiet) {
+@@ -2501,7 +2504,7 @@ processunit(struct unittype *theunit, char *unitstr, char *prompt, int pointer)
+ 
+     return 1;
+   }
+-  if (err=completereduce(theunit)){
++  if ((err=completereduce(theunit))){
+     printf("%s",errormsg[err]);
+     if (err==E_UNKNOWNUNIT)
+       printf(" '%s'", irreducible);
+@@ -2584,11 +2587,11 @@ Typing 'search text' will show units whose names contain 'text'.\n\n",
+              UNITMATCH);
+       return 1;
+     }
+-    if (function = isfunction(str)){
++    if ((function = isfunction(str))){
+       file = function->file;
+       unitline = function->linenumber;
+     }
+-    else if (unit = ulookup(str)){
++    else if ((unit = ulookup(str))){
+       unitline = unit->linenumber;
+       file = unit->file;
+     }
+@@ -2678,7 +2681,7 @@ main(int argc, char **argv)
+    }
+ 
+    if (!interactive) {
+-      if (funcval = isfunction(havestr)){
++      if ((funcval = isfunction(havestr))){
+ 	showfuncdefinition(funcval);
+   	exit(0);
+       }
+@@ -2688,7 +2691,7 @@ main(int argc, char **argv)
+          showdefinition(havestr,&have);
+          exit(0);
+       }
+-      if (funcval = isfunction(wantstr)){
++      if ((funcval = isfunction(wantstr))){
+          if (showfunc(havestr, &have, funcval))
+ 	   exit(1);
+ 	 else
+@@ -2710,7 +2713,7 @@ main(int argc, char **argv)
+ 	 } while (isblankstr(havestr) || ishelpquery(havestr,0) ||
+ 		  (isfunction(havestr)==0 
+ 		  && processunit(&have, havestr, queryhave, POINT)));
+-         if (funcval = isfunction(havestr)){
++         if ((funcval = isfunction(havestr))){
+ 	   showfuncdefinition(funcval);
+ 	   continue;
+ 	 }
+@@ -2728,7 +2731,7 @@ main(int argc, char **argv)
+ 		  && processunit(&want, wantstr, querywant, POINT));
+          if (isblankstr(wantstr))
+            showdefinition(havestr,&have);
+-         else if (funcval = isfunction(wantstr))
++         else if ((funcval = isfunction(wantstr)))
+            showfunc(havestr, &have, funcval);
+ 	 else {
+            showanswer(havestr,&have,wantstr, &want);

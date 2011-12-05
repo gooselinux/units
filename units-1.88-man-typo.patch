@@ -1,0 +1,16 @@
+ units.man |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+diff --git a/units.man b/units.man
+index 6199904..e202da4 100644
+--- a/units.man
++++ b/units.man
+@@ -446,7 +446,7 @@ The temperature differences are done using units starting with
+ Think of `tempF(x)' not as a function but as a notation which
+ indicates that `x' should have units of `tempF' attached to
+ it.  See \fINonlinear units\fR.  The first conversion shows that if it's 45
+-degrees Fahrehneit outside it's 7.2 degrees Celsius.  The second
++degrees Fahrenheit outside it's 7.2 degrees Celsius.  The second
+ conversions indicates that a change of 45 degrees Fahrenheit corresponds
+ to a change of 25 degrees Celsius.
+ .PP
